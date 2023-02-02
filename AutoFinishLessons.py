@@ -69,7 +69,6 @@ def videoend():
                 nextvideo = driver.find_element(By.CLASS_NAME, "nextButton") #定位下一个视频按钮
                 nextvideo.click()#切换到下一个视频
                 lesson()
-                print("运行成功")
         except:
             pass
         time.sleep(10)
@@ -81,3 +80,6 @@ t1 = threading.Thread(target=test)
 t2 = threading.Thread(target=videoend)
 t2.start()
 t1.start()
+
+
+# version：1.0
