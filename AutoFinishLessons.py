@@ -6,13 +6,16 @@ import threading
 import getopt
 import sys
 import signal
+import datetime
+import os
 from typing import Sequence
 
 
 def checkBrowser(browser: str) -> bool:
     return browser == "edge" or browser == "firefox" or browser == "chrome"
 
-def produceDriver(browser:str)->webdriver.Remote:
+
+def produceDriver(browser: str) -> webdriver.Remote:
     if browser == "edge":
         return webdriver.Edge()
     elif browser == "firefox":
@@ -22,12 +25,14 @@ def produceDriver(browser:str)->webdriver.Remote:
     else:
         return webdriver.Edge()
 
+
 def usage():
     print("usage:")
     print("\t-h - show help")
     print("\t-n <name>")
     print("\t-p <password>")
     print("\t-b [edge|firefox|chrome]")
+
 
 def login(driver: webdriver.Remote, name: str, passwd: str):
     luserid = name
@@ -39,14 +44,21 @@ def login(driver: webdriver.Remote, name: str, passwd: str):
     pw.send_keys(lpassword)
     loginbutton.click()
 
+def log(msg:object):
+    print("[{}]{}".format(datetime.datetime.now(),msg))
+
+def logErr(msg:object):
+    log("Err:{}".format(msg))
 
 def play(driver: webdriver.Remote):
     while 1:
         if driver.current_url.__contains__("studyvideoh5"):  # 检测打开视频播放页
             time.sleep(10)  # 等待手动关闭弹窗
             video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位视频窗口
+            log("Play video")
+            video.click()  # 播放视频
+            driver.execute_script('if(document.getElementsByClassName("video-topic").length !=0){document.getElementsByClassName("video-topic")[0].remove()}')
             try:
-                video.click()  # 播放视频
                 ActionChains(driver).move_to_element(video).perform()
                 speedbox = driver.find_element(By.CLASS_NAME, "speedBox")
                 speedbox.click()
@@ -55,12 +67,14 @@ def play(driver: webdriver.Remote):
                     By.CLASS_NAME, "speedTab15")  # 1.5倍播放
                 speedtab15.click()
                 break
-            except:
+            except Exception as ex:
+                logErr(ex.args)
                 break
 
 
 def autoAnswer(driver: webdriver.Remote):
     while 1:
+        log("Check for answer window")
         try:
             question = driver.find_element(
                 By.CLASS_NAME, "topic-item")  # 找到第一个选项
@@ -78,6 +92,7 @@ def autoAnswer(driver: webdriver.Remote):
 
 def checkProgress(driver: webdriver.Remote):
     while 1:
+        log("Check for video progress")
         video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位窗口
         try:
             ActionChains(driver).move_to_element(video).perform()
@@ -87,16 +102,19 @@ def checkProgress(driver: webdriver.Remote):
             time1 = current_time.get_attribute('innerText')
             time2 = total_time.get_attribute('innerText')
             if time1 == time2:
+                log("Switch to next video")
+                driver.execute_script('if(document.getElementsByClassName("video-topic").length !=0){document.getElementsByClassName("video-topic")[0].remove()}')
                 video.click()
                 nextvideo = driver.find_element(
                     By.CLASS_NAME, "nextButton")  # 定位下一个视频按钮
                 nextvideo.click()  # 切换到下一个视频
-                print("Move to next video")
+                log("Switched")
                 play(driver)
-                print("Success")
-        except:
+        except Exception as ex:
+            logErr(ex.args)
             pass
         time.sleep(10)
+
 
 def main(argv: Sequence[str]):
 
@@ -127,18 +145,20 @@ def main(argv: Sequence[str]):
     driver.get("https://onlineweb.zhihuishu.com/")  # 打开智慧树官网
     driver.maximize_window()
     time.sleep(2)
-    login(driver,name,passwd)
+    login(driver, name, passwd)
     play(driver)
-    t1 = threading.Thread(target=autoAnswer,args=(driver,))
-    t2 = threading.Thread(target=checkProgress,args=(driver,))
+    t1 = threading.Thread(target=autoAnswer, args=(driver,))
+    t2 = threading.Thread(target=checkProgress, args=(driver,))
     t2.start()
     t1.start()
     print("Use CTRL+C to exit")
     t2.join()
     t1.join()
 
+
 def quit():
-    sys.exit(0)
+    os._exit(0)
+
 
 if __name__ == "__main__":
     try:
