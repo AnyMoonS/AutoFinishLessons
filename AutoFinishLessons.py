@@ -27,12 +27,15 @@ userid = tk.StringVar()  # 创建账号与密码变量
 password = tk.StringVar()
 
 entryuserid = tk.Entry(root, textvariable=userid).grid(row=0, column=1, padx=0, pady=30)
-entrypassword = tk.Entry(root, textvariable=password, show='*').grid(row=1, column=1, padx=0, pady=10)
+entrypassword = tk.Entry(root, textvariable=password).grid(row=1, column=1, padx=0, pady=10)
 
 Button(root, text='登录', width=10, command=root.destroy).grid(row=2, column=1, sticky=W, padx=0, pady=30)  # 登录
 
 root.mainloop()  # 主窗口进入循环
 
+# Edge
+# driver = webdriver.Edge()
+# Firefox
 driver = webdriver.Firefox()
 actions = ActionChains(driver)
 driver.get("https://onlineweb.zhihuishu.com/")  # 打开智慧树官网
@@ -66,7 +69,7 @@ def lesson():
                 speedtab15.click()
                 break
             except:
-                pass
+                break
 
 
 def test():
