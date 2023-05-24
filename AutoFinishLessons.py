@@ -104,7 +104,6 @@ def checkProgress(driver: webdriver.Remote):
             if time1 == time2:
                 log("Switch to next video")
                 driver.execute_script('if(document.getElementsByClassName("video-topic").length !=0){document.getElementsByClassName("video-topic")[0].remove()}')
-                video.click()
                 nextvideo = driver.find_element(
                     By.CLASS_NAME, "nextButton")  # 定位下一个视频按钮
                 nextvideo.click()  # 切换到下一个视频
