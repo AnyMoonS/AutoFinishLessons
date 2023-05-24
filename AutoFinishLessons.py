@@ -128,7 +128,7 @@ def main(argv: Sequence[str]):
                 name = arg
             elif opt == "-p":
                 passwd = arg
-            elif opt == "-t":
+            elif opt == "-b":
                 browser = arg
         if not checkBrowser(browser):
             usage()
