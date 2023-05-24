@@ -3,49 +3,40 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 import time
 import threading
-from tkinter import *
-import tkinter as tk
-
-root = Tk()  # 创建主窗口
-root.title("AutoFinishLessons    By AnyMoonS")
-
-
-def center_window(root, width, height):  # 窗口居中函数
-    screenwidth = root.winfo_screenwidth()  # 获取显示屏宽度
-    screenheight = root.winfo_screenheight()  # 获取显示屏高度
-    size = '%dx%d+%d+%d' % (width, height, (screenwidth - width) / 2, (screenheight - height) / 2)  # 设置窗口居中参数
-    root.geometry(size)  # 让窗口居中显示
+import getopt
+import sys
+import signal
+import datetime
+import os
+from typing import Sequence
 
 
-center_window(root, 360, 240)
-root.resizable(0, 0)
-
-Label(root, text='智慧树账号（手机号）：').grid(row=0, column=0, padx=10, pady=30)
-Label(root, text='智慧树密码：').grid(row=1, column=0, padx=0, pady=0)
-
-userid = tk.StringVar()  # 创建账号与密码变量
-password = tk.StringVar()
-
-entryuserid = tk.Entry(root, textvariable=userid).grid(row=0, column=1, padx=0, pady=30)
-entrypassword = tk.Entry(root, textvariable=password).grid(row=1, column=1, padx=0, pady=10)
-
-Button(root, text='登录', width=10, command=root.destroy).grid(row=2, column=1, sticky=W, padx=0, pady=30)  # 登录
-
-root.mainloop()  # 主窗口进入循环
-
-# Edge
-# driver = webdriver.Edge()
-# Firefox
-driver = webdriver.Firefox()
-actions = ActionChains(driver)
-driver.get("https://onlineweb.zhihuishu.com/")  # 打开智慧树官网
-driver.maximize_window()
-time.sleep(2)
+def checkBrowser(browser: str) -> bool:
+    return browser == "edge" or browser == "firefox" or browser == "chrome"
 
 
-def login():
-    luserid = userid.get()
-    lpassword = password.get()
+def produceDriver(browser: str) -> webdriver.Remote:
+    if browser == "edge":
+        return webdriver.Edge()
+    elif browser == "firefox":
+        return webdriver.Firefox()
+    elif browser == "chrome":
+        return webdriver.Chrome()
+    else:
+        return webdriver.Edge()
+
+
+def usage():
+    print("usage:")
+    print("\t-h - show help")
+    print("\t-n <name>")
+    print("\t-p <password>")
+    print("\t-b [edge|firefox|chrome]")
+
+
+def login(driver: webdriver.Remote, name: str, passwd: str):
+    luserid = name
+    lpassword = passwd
     phonenumber = driver.find_element(By.ID, "lUsername")
     pw = driver.find_element(By.ID, "lPassword")
     loginbutton = driver.find_element(By.CLASS_NAME, "wall-sub-btn")
@@ -53,32 +44,44 @@ def login():
     pw.send_keys(lpassword)
     loginbutton.click()
 
+def log(msg:object):
+    print("[{}]{}".format(datetime.datetime.now(),msg))
 
-def lesson():
+def logErr(msg:object):
+    log("Err:{}".format(msg))
+
+def play(driver: webdriver.Remote):
     while 1:
         if driver.current_url.__contains__("studyvideoh5"):  # 检测打开视频播放页
             time.sleep(10)  # 等待手动关闭弹窗
             video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位视频窗口
+            log("Play video")
             video.click()  # 播放视频
+            driver.execute_script('if(document.getElementsByClassName("video-topic").length !=0){document.getElementsByClassName("video-topic")[0].remove()}')
             try:
                 ActionChains(driver).move_to_element(video).perform()
                 speedbox = driver.find_element(By.CLASS_NAME, "speedBox")
                 speedbox.click()
                 time.sleep(1)
-                speedtab15 = driver.find_element(By.CLASS_NAME, "speedTab15")  # 1.5倍播放
+                speedtab15 = driver.find_element(
+                    By.CLASS_NAME, "speedTab15")  # 1.5倍播放
                 speedtab15.click()
                 break
-            except:
+            except Exception as ex:
+                logErr(ex.args)
                 break
 
 
-def test():
+def autoAnswer(driver: webdriver.Remote):
     while 1:
+        log("Check for answer window")
         try:
-            question = driver.find_element(By.CLASS_NAME, "topic-item")  # 找到第一个选项
+            question = driver.find_element(
+                By.CLASS_NAME, "topic-item")  # 找到第一个选项
             question.click()
             time.sleep(1)
-            close = driver.find_element(By.XPATH, "/html/body/div[1]/div/div[6]/div/div[3]/span/div")  # 关闭答题界面
+            close = driver.find_element(
+                By.XPATH, "/html/body/div[1]/div/div[6]/div/div[3]/span/div")  # 关闭答题界面
             close.click()
             video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位窗口
             video.click()
@@ -87,31 +90,80 @@ def test():
         time.sleep(10)
 
 
-def videoend():
+def checkProgress(driver: webdriver.Remote):
     while 1:
+        log("Check for video progress")
         video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位窗口
         try:
             ActionChains(driver).move_to_element(video).perform()
-            current_time = driver.find_element(By.CLASS_NAME, "currentTime")  # 当前视频播放时间
+            current_time = driver.find_element(
+                By.CLASS_NAME, "currentTime")  # 当前视频播放时间
             total_time = driver.find_element(By.CLASS_NAME, "duration")  # 总时间
             time1 = current_time.get_attribute('innerText')
             time2 = total_time.get_attribute('innerText')
             if time1 == time2:
+                log("Switch to next video")
+                driver.execute_script('if(document.getElementsByClassName("video-topic").length !=0){document.getElementsByClassName("video-topic")[0].remove()}')
                 video.click()
-                nextvideo = driver.find_element(By.CLASS_NAME, "nextButton")  # 定位下一个视频按钮
+                nextvideo = driver.find_element(
+                    By.CLASS_NAME, "nextButton")  # 定位下一个视频按钮
                 nextvideo.click()  # 切换到下一个视频
-                lesson()
-                print("运行成功")
-        except:
+                log("Switched")
+                play(driver)
+        except Exception as ex:
+            logErr(ex.args)
             pass
         time.sleep(10)
 
 
-login()
-lesson()
-t1 = threading.Thread(target=test)
-t2 = threading.Thread(target=videoend)
-t2.start()
-t1.start()
+def main(argv: Sequence[str]):
 
-# version：1.1
+    name: str = ""
+    passwd: str = ""
+    browser: str = "edge"
+    try:
+        opts, args = getopt.getopt(argv, "n:p:t:b:")
+        for opt, arg in opts:
+            if opt == "-n":
+                name = arg
+            elif opt == "-p":
+                passwd = arg
+            elif opt == "-t":
+                browser = arg
+        if not checkBrowser(browser):
+            usage()
+            return
+    except getopt.GetoptError:
+        usage()
+        return
+    while name == "":
+        name = input("Please input name:")
+    while passwd == "":
+        passwd = input("Please input password")
+    driver = produceDriver(browser)
+    actions = ActionChains(driver)
+    driver.get("https://onlineweb.zhihuishu.com/")  # 打开智慧树官网
+    driver.maximize_window()
+    time.sleep(2)
+    login(driver, name, passwd)
+    play(driver)
+    t1 = threading.Thread(target=autoAnswer, args=(driver,))
+    t2 = threading.Thread(target=checkProgress, args=(driver,))
+    t2.start()
+    t1.start()
+    print("Use CTRL+C to exit")
+    t2.join()
+    t1.join()
+
+
+def quit():
+    os._exit(0)
+
+
+if __name__ == "__main__":
+    try:
+        signal.signal(signal.SIGINT, quit)
+        signal.signal(signal.SIGTERM, quit)
+        main(sys.argv[1:])
+    except Exception:
+        pass
