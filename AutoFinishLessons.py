@@ -116,7 +116,6 @@ def checkProgress(driver: webdriver.Remote):
 
 
 def main(argv: Sequence[str]):
-
     name: str = ""
     passwd: str = ""
     browser: str = "edge"
@@ -138,7 +137,7 @@ def main(argv: Sequence[str]):
     while name == "":
         name = input("Please input name:")
     while passwd == "":
-        passwd = input("Please input password")
+        passwd = input("Please input password:")
     driver = produceDriver(browser)
     actions = ActionChains(driver)
     driver.get("https://onlineweb.zhihuishu.com/")  # 打开智慧树官网
