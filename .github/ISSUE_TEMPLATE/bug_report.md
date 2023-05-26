@@ -13,7 +13,7 @@ assignees: AnyMoonS
 
 **Environment:**
 
-<!-- Describe your server system version, kernel version -->
+<!-- Describe your system version, kernel version, browser version -->
 
 **To Reproduce:**
 
