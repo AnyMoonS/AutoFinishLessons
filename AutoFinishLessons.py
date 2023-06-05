@@ -1,3 +1,4 @@
+import functools
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
@@ -7,9 +8,19 @@ import getopt
 import sys
 import signal
 import datetime
-import os
 from typing import Sequence
 
+class CancelToken:
+    token:bool
+
+    def __init__(self) -> None:
+        self.token = False
+
+    def Stop(self) -> None:
+        self.token = True
+
+    def IsStop(self) -> bool:
+        return self.token
 
 def checkBrowser(browser: str) -> bool:
     return browser == "edge" or browser == "firefox" or browser == "chrome"
@@ -24,7 +35,6 @@ def produceDriver(browser: str) -> webdriver.Remote:
         return webdriver.Chrome()
     else:
         return webdriver.Edge()
-
 
 def usage():
     print("usage:")
@@ -50,15 +60,15 @@ def log(msg:object):
 def logErr(msg:object):
     log("Err:{}".format(msg))
 
-def play(driver: webdriver.Remote):
-    while 1:
+def play(driver: webdriver.Remote,token:CancelToken):
+    while not token.IsStop():
         if driver.current_url.__contains__("studyvideoh5"):  # 检测打开视频播放页
             time.sleep(10)  # 等待手动关闭弹窗
-            video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位视频窗口
-            log("Play video")
-            video.click()  # 播放视频
-            driver.execute_script('if(document.getElementsByClassName("video-topic").length !=0){document.getElementsByClassName("video-topic")[0].remove()}')
             try:
+                video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位视频窗口
+                log("Play video")
+                video.click()  # 播放视频
+                driver.execute_script('if(document.getElementsByClassName("video-topic").length !=0){document.getElementsByClassName("video-topic")[0].remove()}')
                 ActionChains(driver).move_to_element(video).perform()
                 speedbox = driver.find_element(By.CLASS_NAME, "speedBox")
                 speedbox.click()
@@ -72,8 +82,8 @@ def play(driver: webdriver.Remote):
                 break
 
 
-def autoAnswer(driver: webdriver.Remote):
-    while 1:
+def autoAnswer(driver: webdriver.Remote,token:CancelToken):
+    while not token.IsStop():
         log("Check for answer window")
         try:
             question = driver.find_element(
@@ -85,16 +95,16 @@ def autoAnswer(driver: webdriver.Remote):
             close.click()
             video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位窗口
             video.click()
-        except:
-            pass
+        except Exception as ex:
+            logErr(ex.args)
         time.sleep(10)
 
 
-def checkProgress(driver: webdriver.Remote):
-    while 1:
+def checkProgress(driver: webdriver.Remote,token:CancelToken):
+    while not token.IsStop():
         log("Check for video progress")
-        video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位窗口
         try:
+            video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位窗口
             ActionChains(driver).move_to_element(video).perform()
             current_time = driver.find_element(
                 By.CLASS_NAME, "currentTime")  # 当前视频播放时间
@@ -108,12 +118,14 @@ def checkProgress(driver: webdriver.Remote):
                     By.CLASS_NAME, "nextButton")  # 定位下一个视频按钮
                 nextvideo.click()  # 切换到下一个视频
                 log("Switched")
-                play(driver)
+                play(driver,token)
         except Exception as ex:
             logErr(ex.args)
-            pass
         time.sleep(10)
 
+def quit(token:CancelToken,sig:int,frame):
+    token.Stop()
+    log("Stop")
 
 def main(argv: Sequence[str]):
     name: str = ""
@@ -142,26 +154,25 @@ def main(argv: Sequence[str]):
     actions = ActionChains(driver)
     driver.get("https://onlineweb.zhihuishu.com/")  # 打开智慧树官网
     driver.maximize_window()
+    token:CancelToken = CancelToken()
     time.sleep(2)
     login(driver, name, passwd)
-    play(driver)
-    t1 = threading.Thread(target=autoAnswer, args=(driver,))
-    t2 = threading.Thread(target=checkProgress, args=(driver,))
+    play(driver,token)
+    t1 = threading.Thread(target=autoAnswer, args=(driver,token,))
+    t2 = threading.Thread(target=checkProgress, args=(driver,token,))
     t2.start()
     t1.start()
-    print("Use CTRL+C to exit")
+    print("Use Enter any key to exit")
+    _ = input()
+    log("Stopping")
+    token.Stop()
     t2.join()
     t1.join()
-
-
-def quit():
-    os._exit(0)
-
+    driver.close()
+    log("Stoped")
 
 if __name__ == "__main__":
     try:
-        signal.signal(signal.SIGINT, quit)
-        signal.signal(signal.SIGTERM, quit)
         main(sys.argv[1:])
     except Exception:
         pass
