@@ -111,7 +111,7 @@ def checkProgress(driver: webdriver.Remote,token:CancelToken):
             total_time = driver.find_element(By.CLASS_NAME, "duration")  # 总时间
             time1 = current_time.get_attribute('innerText')
             time2 = total_time.get_attribute('innerText')
-            if time1 == time2:
+            if time1 >= time2:
                 log("Switch to next video")
                 driver.execute_script('if(document.getElementsByClassName("video-topic").length !=0){document.getElementsByClassName("video-topic")[0].remove()}')
                 nextvideo = driver.find_element(
