@@ -91,7 +91,7 @@ def autoAnswer(driver: webdriver.Remote,token:CancelToken):
             question.click()
             time.sleep(1)
             close = driver.find_element(
-                By.XPATH, "/html/body/div[1]/div/div[6]/div/div[3]/span/div")  # 关闭答题界面
+                By.XPATH, "/html/body/div[1]/div/div[2]/div[1]/div[2]/div[1]/div/div[3]/span/div")  # 关闭答题界面
             close.click()
             video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位窗口
             video.click()
