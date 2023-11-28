@@ -190,7 +190,7 @@ def xCheckProgress(driver: webdriver.Remote, token: CancelToken):
             log("duration_time:" +time2)
             driver.switch_to.parent_frame()
             driver.switch_to.default_content()
-            if time1 >= time2:
+            if time1 == time2:
                 log("Switch to next video")
                 nextbutton = driver.find_element(By.ID, "right2")
                 nextbutton.click()
