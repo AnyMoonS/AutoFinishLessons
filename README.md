@@ -13,16 +13,6 @@
 * [Edge](https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/)
 * [Chrome](https://chromedriver.chromium.org/downloads)
 
-*Edge请下载驱动后重命名为 `MicrosoftWebDriver.exe`*
+~~*Edge请下载驱动后重命名为 `MicrosoftWebDriver.exe`*~~
 
-运行主文件，登录之后打开希望自动学习的课程
-
-```shell
-python AutoFinishLessons.py -n your_name -p your_pwd
-```
-
-更多选项
-
-```shell
-python AutoFinishLessons.py -h
-```
+运行主文件，选择模式，登录之后打开希望自动学习的课程
