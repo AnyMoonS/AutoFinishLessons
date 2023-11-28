@@ -65,12 +65,7 @@ def play(driver: webdriver.Remote,token:CancelToken):
         if driver.current_url.__contains__("studyvideoh5"):  # 检测打开视频播放页
             time.sleep(10)  # 等待手动关闭弹窗
             try:
-                videos = driver.find_elements(By.CLASS_NAME, "videoArea")  # 定位视频窗口
-                if not videos:
-                    logErr("Failed to locate video window")
-                    time.sleep(10)
-                    continue
-                video = videos[0]
+                video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位视频窗口
                 log("Play video")
                 video.click()  # 播放视频
                 driver.execute_script('if(document.getElementsByClassName("video-topic").length !=0){document.getElementsByClassName("video-topic")[0].remove()}')
@@ -83,7 +78,7 @@ def play(driver: webdriver.Remote,token:CancelToken):
                 speedtab15.click()
                 break
             except Exception as ex:
-                logErr(ex)
+                logErr(ex.args)
                 break
 
 
@@ -91,12 +86,8 @@ def autoAnswer(driver: webdriver.Remote,token:CancelToken):
     while not token.IsStop():
         log("Check for answer window")
         try:
-            questions = driver.find_elements(
+            question = driver.find_element(
                 By.CLASS_NAME, "topic-item")  # 找到第一个选项
-            if not questions:
-                time.sleep(10)
-                continue
-            question = questions[0]
             question.click()
             time.sleep(1)
             close = driver.find_element(
@@ -105,7 +96,7 @@ def autoAnswer(driver: webdriver.Remote,token:CancelToken):
             video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位窗口
             video.click()
         except Exception as ex:
-            logErr(ex)
+            logErr(ex.args)
         time.sleep(10)
 
 
@@ -113,12 +104,7 @@ def checkProgress(driver: webdriver.Remote,token:CancelToken):
     while not token.IsStop():
         log("Check for video progress")
         try:
-            videos = driver.find_elements(By.CLASS_NAME, "videoArea")  # 定位窗口
-            if not videos:
-                logErr("Failed to locate video window")
-                time.sleep(10)
-                continue
-            video = videos[0]
+            video = driver.find_element(By.CLASS_NAME, "videoArea")  # 定位窗口
             ActionChains(driver).move_to_element(video).perform()
             current_time = driver.find_element(
                 By.CLASS_NAME, "currentTime")  # 当前视频播放时间
@@ -134,7 +120,7 @@ def checkProgress(driver: webdriver.Remote,token:CancelToken):
                 log("Switched")
                 play(driver,token)
         except Exception as ex:
-            logErr(ex)
+            logErr(ex.args)
         time.sleep(10)
 
 def quit(token:CancelToken,sig:int,frame):
