@@ -169,7 +169,7 @@ def zCheckProgress(driver: webdriver.Remote,token:CancelToken):
                     By.CLASS_NAME, "nextButton")  # 定位下一个视频按钮
                 nextvideo.click()  # 切换到下一个视频
                 log("Switched")
-                play(driver,token)
+                zPlay(driver,token)
         except Exception as ex:
             logErr(ex)
         time.sleep(10)
